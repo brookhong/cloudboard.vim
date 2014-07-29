@@ -170,10 +170,3 @@ class CloudBoard:
         self.saveConfig()
 
 cloudBoard = CloudBoard()
-#print cloudBoard.config
-#print cloudBoard.listComments(['id', 'body'])
-#print cloudBoard.newComment("test it")
-#print cloudBoard.listComments(['id', 'body'])
-#print cloudBoard.editComment(0, "===\\nmake loving 阿拉伯\\nboy\\nn阿飞的额")
-#print cloudBoard.readComment(0)
-#print cloudBoard.clearComments()

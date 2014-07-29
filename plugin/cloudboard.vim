@@ -58,6 +58,7 @@ endfunction
 function! cloudboard#Yank(nr, str)
     if <SID>LoadCloudBoard() == 1
         exec 'python cloudBoard.editComment('.a:nr.',"'.a:str.'")'
+        echo 'Copied into cloud register '.a:nr.'.'
     endif
 endfunction
 
@@ -65,9 +66,10 @@ function! cloudboard#Put(nr)
     if <SID>LoadCloudBoard() == 1
         exec 'python cloudBoard_clip = cloudBoard.readComment('.a:nr.')'
         python vim.command("let @c='%s'" % urllib.unquote_plus(cloudBoard_clip).replace("'", "''"))
-        "let @c = cloudboard#UrlEncode(@c, 0)
-        if @c != ""
+        if len(@c) > 1
             normal "cp
+        else
+            echohl WarningMsg | echo "No data in the cloud register." | echohl None
         endif
     endif
 endfunction
