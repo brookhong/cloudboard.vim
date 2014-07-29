@@ -24,7 +24,7 @@ function! s:LoadCloudBoard()
     return s:cloudboard_py_loaded
 endfunction
 
-function! CloudBoard#UrlEncode(str, dir)
+function! cloudboard#UrlEncode(str, dir)
     python << EOF
 import urllib
 astr = vim.eval('a:str')
@@ -33,9 +33,9 @@ if dir:
     urlStr = urllib.quote_plus(astr)
     vim.command(('let l:urlStr="%s"') % urlStr)
 else:
-    urlStr = urllib.unquote_plus(astr).split('\n')
-    vim.vars['cloudBoard_clip'] = urlStr
-    vim.command(("let l:urlStr=g:cloudBoard_clip"))
+    urlStr = urllib.unquote_plus(astr)
+    urlStr = urlStr.replace("'", "''")
+    vim.command("let l:urlStr='%s'" % urlStr)
 EOF
     if type(l:urlStr) == type([])
         let l:tmp = join(l:urlStr, "\n")
@@ -44,28 +44,28 @@ EOF
     return l:urlStr
 endfunction
 
-function! CloudBoard#UrlEncodeRange(line1, line2, dir)
+function! cloudboard#UrlEncodeRange(line1, line2, dir)
     let l:str = join(getline(a:line1, a:line2), "\n")
-    return CloudBoard#UrlEncode(l:str, a:dir)
+    return cloudboard#UrlEncode(l:str, a:dir)
 endfunction
 
-function! CloudBoard#Init()
+function! cloudboard#Init()
     if <SID>LoadCloudBoard() == 1
         exec 'python cloudBoard.initToken()'
     endif
 endfunction
 
-function! CloudBoard#Yank(nr, str)
+function! cloudboard#Yank(nr, str)
     if <SID>LoadCloudBoard() == 1
         exec 'python cloudBoard.editComment('.a:nr.',"'.a:str.'")'
     endif
 endfunction
 
-function! CloudBoard#Put(nr)
+function! cloudboard#Put(nr)
     if <SID>LoadCloudBoard() == 1
-        exec 'python vim.vars["cloudBoard_clip"] = cloudBoard.readComment('.a:nr.')'
-        python vim.command('let @*=g:cloudBoard_clip')
-        let @c = CloudBoard#UrlEncode(@*, 0)
+        exec 'python cloudBoard_clip = cloudBoard.readComment('.a:nr.')'
+        python vim.command("let @c='%s'" % urllib.unquote_plus(cloudBoard_clip).replace("'", "''"))
+        "let @c = cloudboard#UrlEncode(@c, 0)
         if @c != ""
             normal "cp
         endif
@@ -73,7 +73,7 @@ function! CloudBoard#Put(nr)
 endfunction
 
 function! s:UrlEncodeRange(line1, line2, dir)
-    let @z = CloudBoard#UrlEncodeRange(a:line1, a:line2, a:dir)."\n"
+    let @z = cloudboard#UrlEncodeRange(a:line1, a:line2, a:dir)."\n"
     exec a:line1.','.a:line2.'d'
     normal "zP
 endfunction
@@ -81,8 +81,6 @@ endfunction
 com! -nargs=* -range=% UrlEncode :call <SID>UrlEncodeRange(<line1>,<line2>,1)
 com! -nargs=* -range=% UrlDecode :call <SID>UrlEncodeRange(<line1>,<line2>,0)
 
-com! -nargs=0 CBInit :call CloudBoard#Init()
-com! -nargs=1 -range=% CBYank :call CloudBoard#Yank(<f-args>, CloudBoard#UrlEncodeRange(<line1>, <line2>, 1))
-com! -nargs=1 CBPut :call CloudBoard#Put(<f-args>)
-
-nnoremap <space>p0 :CBPut 0<CR>
+com! -nargs=0 CBInit :call cloudboard#Init()
+com! -nargs=1 -range=% CBYank :call cloudboard#Yank(<f-args>, cloudboard#UrlEncodeRange(<line1>, <line2>, 1))
+com! -nargs=1 CBPut :call cloudboard#Put(<f-args>)

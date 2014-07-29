@@ -79,22 +79,22 @@ class CloudBoard:
         ret = False
         if module_exists("vim"):
             vim.command("let g:cloudBoardOwn=input('To use CloudBoard, you need set up your exclusive one.\nUse your own GITHUB account(Y/N)?', 'Y')")
-            if vim.vars['cloudBoardOwn'] == 'Y':
+            if vim.eval('g:cloudBoardOwn') == 'Y':
                 vim.command("let g:cloudBoardUser=input('GITHUB username:')")
                 vim.command("let g:cloudBoardPass=input('GITHUB password:')")
-                self.config['token'] = initToken(vim.vars['cloudBoardUser'], vim.vars['cloudBoardPass'])
+                self.config['token'] = initToken(vim.eval( 'g:cloudBoardUser' ), vim.eval( 'g:cloudBoardPass' ))
                 if self.config['token'] == "":
                     vim.command('echo "\nInvalid GITHUB account!"')
                 else:
-                    self.config['gist'] = initGist(self.config['token'], "cloudboard.%s" % (vim.vars['cloudBoardUser']))
+                    self.config['gist'] = initGist(self.config['token'], "cloudboard.%s" % (vim.eval( 'g:cloudBoardUser' )))
                     ret = True
                 vim.command("unlet g:cloudBoardUser")
                 vim.command("unlet g:cloudBoardPass")
             else:
                 self.config['token'] = '1012d87ff4b053d01ce2f90bd266f2a047567bd3';
                 vim.command("let g:cloudBoardEmail=input('An unique name for your CloudBoard(Your Email Address preferred):')")
-                if vim.vars['cloudBoardEmail'] != "":
-                    self.config['gist'] = initGist(self.config['token'], "cloudboard.%s" % (vim.vars['cloudBoardEmail']))
+                if vim.eval( 'g:cloudBoardEmail' ) != "":
+                    self.config['gist'] = initGist(self.config['token'], "cloudboard.%s" % (vim.eval( 'g:cloudBoardEmail' )))
                     ret = True
                 else:
                     vim.command('echo "\nCloudBoard name is better to be unique!"')
