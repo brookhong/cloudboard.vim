@@ -6,21 +6,7 @@
 # Copyright (c) Brook Hong.  Distributed under the same terms as Vim itself.
 # See :help license
 
-import urllib, urllib2, base64
-import json,os
-
-def request(url, headers, data=None, httpErrorHandler=None):
-    req = urllib2.Request(url, data)
-    for k in headers.keys():
-        req.add_header(k, headers[k])
-    try:
-        response = urllib2.urlopen(req)
-        jstr = response.read()
-    except urllib2.HTTPError, e:
-        jstr = '{"error": "%s"}' % e
-        if httpErrorHandler:
-            httpErrorHandler(e)
-    return json.loads(jstr)
+import base64, os
 
 def initToken(username, password):
     basicAuth = base64.encodestring('%s:%s' % (username, password)).replace('\n', '')
@@ -128,6 +114,18 @@ class CloudBoard:
 
     def newComment(self, clip):
         return request('https://api.github.com/gists/%s/comments' % self.config['gist'], {'Authorization': 'token %s' % self.config['token']}, '{ "body": "%s" }' % clip)
+
+    def readComments(self):
+        comments = self.listComments(['body'])
+        allcomts = ""
+        hid = 0
+        for c in comments:
+            cmt = '%s %d %s\n%s\n' % ('>'*16, hid, '<'*16, urllib.unquote_plus(c[0]).replace("'", "''"))
+            allcomts = allcomts + cmt
+            hid = hid + 1
+        vim.command("let @c='%s'" % allcomts)
+        vim.command('normal "cp')
+
 
     def readComment(self, nr):
         if 'comments' not in self.config:

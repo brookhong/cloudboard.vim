@@ -11,6 +11,8 @@ endif
 
 let s:cloudboard_py = expand("<sfile>:p:h")."/cloudboard.py"
 
+exec 'pyfile '.expand("<sfile>:p:h")."/web_utils.py"
+
 let s:cloudboard_py_loaded = 0
 function! s:LoadCloudBoard()
     if s:cloudboard_py_loaded == 0
@@ -74,6 +76,12 @@ function! cloudboard#Put(nr)
     endif
 endfunction
 
+function! cloudboard#List()
+    if <SID>LoadCloudBoard() == 1
+        python cloudBoard.readComments()
+    endif
+endfunction
+
 function! s:UrlEncodeRange(line1, line2, dir)
     let @z = cloudboard#UrlEncodeRange(a:line1, a:line2, a:dir)."\n"
     exec a:line1.','.a:line2.'d'
@@ -84,5 +92,6 @@ com! -nargs=* -range=% UrlEncode :call <SID>UrlEncodeRange(<line1>,<line2>,1)
 com! -nargs=* -range=% UrlDecode :call <SID>UrlEncodeRange(<line1>,<line2>,0)
 
 com! -nargs=0 CBInit :call cloudboard#Init()
+com! -nargs=0 CBList :call cloudboard#List()
 com! -nargs=1 -range=% CBYank :call cloudboard#Yank(<f-args>, cloudboard#UrlEncodeRange(<line1>, <line2>, 1))
 com! -nargs=1 CBPut :call cloudboard#Put(<f-args>)

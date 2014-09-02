@@ -20,6 +20,9 @@ The number starts from 0, you can use anyone you'd like, for example:
     :CBYank 5
     :CBPut 5
 
+
+`:CBList` to put the contents from all cloud registers into current buffer.
+
 ### Recommended Mappings
 
     nnoremap <space>p :CBPut 
