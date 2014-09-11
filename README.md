@@ -27,10 +27,10 @@ The number starts from 0, you can use anyone you'd like, for example:
 
 Cloud files are named files stored in a GITHUB gist.
 
-`:CBSave test.c`      to save selected range into a cloud file named `test.c`.
-`:CBLoad test.c`      to load a cloud file `test.c` into current buffer.
-`:CBRm test.c`        to delete a cloud file `test.c`.
-`:CBListFiles`        to list all cloud files in the cloudboard gist.
+    :CBSave test.c      to save selected range into a cloud file named test.c.
+    :CBLoad test.c      to load a cloud file test.c into current buffer.
+    :CBRm test.c        to delete a cloud file test.c.
+    :CBListFiles        to list all cloud files in the cloudboard gist.
 
 Loading cloud files requires two requests to GITHUB, thus cloud register is faster to be used as a clipboard across machines.
 Cloud files is better when the text is huge, especial in case of that you prefer to save them for long period.
