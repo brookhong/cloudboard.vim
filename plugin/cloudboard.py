@@ -92,6 +92,36 @@ class CloudBoard:
             self.saveConfig()
         return ret
 
+    def newFile(self, name, content):
+        return request('https://api.github.com/gists/%s' % self.config['gist'], {'Authorization': 'token %s' % self.config['token']}, '{ "files": { "%s": { "content": "%s" } } }' % (name, content))
+
+    def deleteFile(self, name):
+        return request('https://api.github.com/gists/%s' % self.config['gist'], {'Authorization': 'token %s' % self.config['token']}, '{ "files": { "%s": { "content": null } } }' % name)
+
+    def readFile(self, name):
+        content = ""
+        gist = request('https://api.github.com/gists/%s' % self.config['gist'], {'Authorization': 'token %s' % self.config['token']})
+        if "files" in gist and name in gist['files']:
+            furl = gist['files'][name]['raw_url']
+            content = request(furl, {'Authorization': 'token %s' % self.config['token']}, json_decode=False)
+            content = urllib.unquote_plus(content).replace("'", "''")
+            vim.command("let @c='%s'" % content)
+            vim.command('normal "cp')
+        else:
+            print "No such file named '%s'." % name
+
+    def readFiles(self):
+        content = ""
+        gist = request('https://api.github.com/gists/%s' % self.config['gist'], {'Authorization': 'token %s' % self.config['token']})
+        if "files" in gist:
+            for name in gist['files']:
+                furl = gist['files'][name]['raw_url']
+                cmt = request(furl, {'Authorization': 'token %s' % self.config['token']}, json_decode=False)
+                cmt = '%s %s %s\n%s\n' % ('>'*16, name, '<'*16, urllib.unquote_plus(cmt).replace("'", "''"))
+                content = content + cmt
+            vim.command("let @c='%s'" % content)
+            vim.command('normal "cp')
+
     def commentsErrorHandler(self, e):
         if e.code == 404:
             self.listComments(['id'])

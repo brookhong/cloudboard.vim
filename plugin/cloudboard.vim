@@ -82,16 +82,61 @@ function! cloudboard#List()
     endif
 endfunction
 
+function! cloudboard#Save(name, str)
+    if <SID>LoadCloudBoard() == 1
+        exec 'python cloudBoard.newFile("'.a:name.'","'.a:str.'")'
+        echo 'Saved into cloud file "'.a:name.'".'
+    endif
+endfunction
+
+function! cloudboard#Load(name)
+    if <SID>LoadCloudBoard() == 1
+        exec 'python cloudBoard.readFile("'.a:name.'")'
+    endif
+endfunction
+
+function! cloudboard#Delete(name)
+    if <SID>LoadCloudBoard() == 1
+        exec 'python cloudBoard.deleteFile("'.a:name.'")'
+        echo 'Deleted cloud file "'.a:name.'".'
+    endif
+endfunction
+
+function! cloudboard#ListFiles()
+    if <SID>LoadCloudBoard() == 1
+        python cloudBoard.readFiles()
+    endif
+endfunction
+
 function! s:UrlEncodeRange(line1, line2, dir)
     let @z = cloudboard#UrlEncodeRange(a:line1, a:line2, a:dir)."\n"
     exec a:line1.','.a:line2.'d'
     normal "zP
 endfunction
 
+function! cloudboard#BufffersList(A,L,P)
+    let all = range(0, bufnr('$'))
+    let res = []
+    for b in all
+        if buflisted(b)
+            let a = substitute(bufname(b),"\\","\/","g")
+            let a = substitute(a,".*/","","g")
+            if a != ''  && count(res, a) == 0 && a =~ a:A.'.*'
+                call add(res, a)
+            endif
+        endif
+    endfor
+    return res
+endfunction
+
 com! -nargs=* -range=% UrlEncode :call <SID>UrlEncodeRange(<line1>,<line2>,1)
 com! -nargs=* -range=% UrlDecode :call <SID>UrlEncodeRange(<line1>,<line2>,0)
 
 com! -nargs=0 CBInit :call cloudboard#Init()
-com! -nargs=0 CBList :call cloudboard#List()
 com! -nargs=1 -range=% CBYank :call cloudboard#Yank(<f-args>, cloudboard#UrlEncodeRange(<line1>, <line2>, 1))
 com! -nargs=1 CBPut :call cloudboard#Put(<f-args>)
+com! -nargs=0 CBList :call cloudboard#List()
+com! -nargs=1 -complete=customlist,cloudboard#BufffersList -range=% CBSave :call cloudboard#Save(<f-args>, cloudboard#UrlEncodeRange(<line1>, <line2>, 1))
+com! -nargs=1 -complete=customlist,cloudboard#BufffersList CBLoad :call cloudboard#Load(<f-args>)
+com! -nargs=1 -complete=customlist,cloudboard#BufffersList CBRm :call cloudboard#Delete(<f-args>)
+com! -nargs=0 CBListFiles :call cloudboard#ListFiles()

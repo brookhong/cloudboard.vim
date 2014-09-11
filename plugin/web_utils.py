@@ -6,7 +6,7 @@
 
 import urllib, urllib2, json
 
-def request(url, headers, data=None, httpErrorHandler=None):
+def request(url, headers, data=None, httpErrorHandler=None, json_decode=True):
     req = urllib2.Request(url, data)
     for k in headers.keys():
         req.add_header(k, headers[k])
@@ -17,4 +17,7 @@ def request(url, headers, data=None, httpErrorHandler=None):
         jstr = '{"error": "%s"}' % e
         if httpErrorHandler:
             httpErrorHandler(e)
-    return json.loads(jstr)
+    ret = jstr
+    if json_decode:
+        ret = json.loads(jstr)
+    return ret
