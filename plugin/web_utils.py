@@ -17,6 +17,8 @@ def request(url, headers, data=None, httpErrorHandler=None, json_decode=True):
         jstr = '{"error": "%s"}' % e
         if httpErrorHandler:
             httpErrorHandler(e)
+    except urllib2.URLError, e:
+        jstr = '{"error": "%s"}' % e
     ret = jstr
     if json_decode:
         ret = json.loads(jstr)

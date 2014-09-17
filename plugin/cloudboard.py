@@ -8,6 +8,8 @@
 
 import base64, os
 
+reload(sys)
+sys.setdefaultencoding('utf8')
 def initToken(username, password):
     basicAuth = base64.encodestring('%s:%s' % (username, password)).replace('\n', '')
     tokens = request('https://api.github.com/authorizations', {"Authorization": "Basic %s" % basicAuth})
@@ -93,34 +95,48 @@ class CloudBoard:
         return ret
 
     def newFile(self, name, content):
-        return request('https://api.github.com/gists/%s' % self.config['gist'], {'Authorization': 'token %s' % self.config['token']}, '{ "files": { "%s": { "content": "%s" } } }' % (name, content))
+        cf = request('https://api.github.com/gists/%s' % self.config['gist'], {'Authorization': 'token %s' % self.config['token']}, '{ "files": { "%s": { "content": "%s" } } }' % (name, content))
+        if "error" in cf:
+            vim.command("echohl WarningMsg | echo '%s'| echohl None" % cf['error'])
+        else:
+            vim.command("echo 'Saved into cloud file %s.'" % name)
 
     def deleteFile(self, name):
-        return request('https://api.github.com/gists/%s' % self.config['gist'], {'Authorization': 'token %s' % self.config['token']}, '{ "files": { "%s": { "content": null } } }' % name)
+        cf = request('https://api.github.com/gists/%s' % self.config['gist'], {'Authorization': 'token %s' % self.config['token']}, '{ "files": { "%s": { "content": null } } }' % name)
+        if "error" in cf:
+            vim.command("echohl WarningMsg | echo '%s'| echohl None" % cf['error'])
+        else:
+            vim.command("echo 'Deleted cloud file %s.'" % name)
 
     def readFile(self, name):
         content = ""
         gist = request('https://api.github.com/gists/%s' % self.config['gist'], {'Authorization': 'token %s' % self.config['token']})
-        if "files" in gist and name in gist['files']:
-            furl = gist['files'][name]['raw_url']
-            content = request(furl, {'Authorization': 'token %s' % self.config['token']}, json_decode=False)
-            content = urllib.unquote_plus(content).replace("'", "''")
-            vim.command("let @c='%s'" % content)
-            vim.command('normal "cp')
+        if "error" in gist:
+            vim.command("echohl WarningMsg | echo '%s'| echohl None" % gist['error'])
         else:
-            print "No such file named '%s'." % name
+            if "files" in gist and name in gist['files']:
+                furl = gist['files'][name]['raw_url']
+                content = request(furl, {'Authorization': 'token %s' % self.config['token']}, json_decode=False)
+                content = urllib.unquote_plus(content).replace("'", "''")
+                vim.command("let @c='%s'" % content)
+                vim.command('normal "cp')
+            else:
+                vim.command("echo 'No such file named %s.'" % name)
 
     def readFiles(self):
         content = ""
         gist = request('https://api.github.com/gists/%s' % self.config['gist'], {'Authorization': 'token %s' % self.config['token']})
-        if "files" in gist:
-            for name in gist['files']:
-                furl = gist['files'][name]['raw_url']
-                cmt = request(furl, {'Authorization': 'token %s' % self.config['token']}, json_decode=False)
-                cmt = '%s %s %s\n%s\n' % ('>'*16, name, '<'*16, urllib.unquote_plus(cmt).replace("'", "''"))
-                content = content + cmt
-            vim.command("let @c='%s'" % content)
-            vim.command('normal "cp')
+        if "error" in gist:
+            vim.command("echohl WarningMsg | echo '%s'| echohl None" % gist['error'])
+        else:
+            if "files" in gist:
+                for name in gist['files']:
+                    furl = gist['files'][name]['raw_url']
+                    cmt = request(furl, {'Authorization': 'token %s' % self.config['token']}, json_decode=False)
+                    cmt = '%s %s %s\n%s\n' % ('>'*16, name, '<'*16, urllib.unquote_plus(cmt).replace("'", "''"))
+                    content = content + cmt
+                vim.command("let @c='%s'" % content)
+                vim.command('normal "cp')
 
     def commentsErrorHandler(self, e):
         if e.code == 404:
@@ -137,9 +153,12 @@ class CloudBoard:
         comments = []
         if 'gist' in self.config:
             comments = request('https://api.github.com/gists/%s/comments' % self.config['gist'], {'Authorization': 'token %s' % self.config['token']})
-            self.config['comments'] = map(lambda c: [c['id']], comments)
-            self.saveConfig()
-            comments = map(lambda c: [c[k] for k in fields], comments)
+            if 'error' in comments:
+                self.initToken()
+            else:
+                self.config['comments'] = map(lambda c: [c['id']], comments)
+                self.saveConfig()
+                comments = map(lambda c: [c[k] for k in fields], comments)
         return comments
 
     def newComment(self, clip):
@@ -160,16 +179,22 @@ class CloudBoard:
     def readComment(self, nr):
         if 'comments' not in self.config:
             self.listComments(['id'])
-        comment = ""
         if 'comments' in self.config:
             if nr >= len(self.config['comments']):
                 self.listComments(['id'])
             if nr < len(self.config['comments']):
                 cid = self.config['comments'][nr][0]
                 cmt = request('https://api.github.com/gists/%s/comments/%s' % (self.config['gist'], cid), {'Authorization': 'token %s' % self.config['token']}, httpErrorHandler=self.commentsErrorHandler)
-                if "error" not in cmt:
+                if "error" in cmt:
+                    vim.command("echohl WarningMsg | echo '%s'| echohl None" % cmt['error'])
+                else:
                     comment = cmt['body'].encode('utf8')
-        return comment
+                    if len(comment) > 1:
+                        comment = urllib.unquote_plus(comment).replace("'", "''")
+                        vim.command("let @c='%s'" % comment)
+                        vim.command('normal "cp')
+                    else:
+                        print "No data in the cloud register."
 
     def editComment(self, nr, clip):
         if 'comments' not in self.config:
@@ -185,10 +210,13 @@ class CloudBoard:
                     i = i+1
                 self.listComments(['id'])
             cid = self.config['comments'][nr][0]
-            return request('https://api.github.com/gists/%s/comments/%s' % (str(self.config['gist']), cid),
+            cmt = request('https://api.github.com/gists/%s/comments/%s' % (str(self.config['gist']), cid),
                     {'Authorization': 'token %s' % str(self.config['token'])}, '{ "body": "%s" }' % clip,
                     httpErrorHandler=self.commentsErrorHandler)
-        return {"error": "not ready"}
+            if "error" in cmt:
+                vim.command("echohl WarningMsg | echo '%s'| echohl None" % cmt['error'])
+            else:
+                vim.command("echo 'Copied into cloud register %s.'" % nr)
 
     def clearComments(self):
         self.listComments(['id'])
