@@ -79,7 +79,7 @@ class CloudBoard:
                 vim.command("unlet g:cloudBoardUser")
                 vim.command("unlet g:cloudBoardPass")
             else:
-                self.config['token'] = '1012d87ff4b053d01ce2f90bd266f2a047567bd3';
+                self.config['token'] = '1012d87ff4b053d01ce2f90bd266f2a047567bd3'
                 vim.command("let g:cloudBoardEmail=input('An unique name for your CloudBoard(Your Email Address preferred):')")
                 if vim.eval( 'g:cloudBoardEmail' ) != "":
                     self.config['gist'] = initGist(self.config['token'], "cloudboard.%s" % (vim.eval( 'g:cloudBoardEmail' )))
@@ -141,7 +141,7 @@ class CloudBoard:
     def commentsErrorHandler(self, e):
         if e.code == 404:
             self.listComments(['id'])
-            print "Fixed CloudBoard ID error, please try again."
+            vim.command("echo 'Fixed CloudBoard ID error, please try again.'")
         elif e.code == 401:
             self.initToken()
         else:
@@ -175,6 +175,16 @@ class CloudBoard:
         vim.command("let @c='%s'" % allcomts)
         vim.command('normal "cp')
 
+    def setAutoClear(self, nr):
+        if 'autoclear' not in self.config:
+            self.config['autoclear'] = []
+        if nr in self.config['autoclear']:
+            self.config['autoclear'].remove(nr)
+            vim.command("echo 'AutoClear has been disabled for cloud register %s.'" % nr)
+        else:
+            self.config['autoclear'].append(nr)
+            vim.command("echo 'AutoClear has been enabled for cloud register %s.'" % nr)
+        self.saveConfig()
 
     def readComment(self, nr):
         if 'comments' not in self.config:
@@ -193,8 +203,10 @@ class CloudBoard:
                         comment = urllib.unquote_plus(comment).replace("'", "''")
                         vim.command("let @c='%s'" % comment)
                         vim.command('normal "cp')
+                        if 'autoclear' in self.config and nr in self.config['autoclear']:
+                            request('https://api.github.com/gists/%s/comments/%s' % (self.config['gist'], cid), {'Authorization': 'token %s' % self.config['token']}, '{ "body": "." }', httpErrorHandler=self.commentsErrorHandler)
                     else:
-                        print "No data in the cloud register."
+                        vim.command("echo 'No data in the cloud register.'")
 
     def editComment(self, nr, clip):
         if 'comments' not in self.config:
@@ -210,8 +222,8 @@ class CloudBoard:
                     i = i+1
                 self.listComments(['id'])
             cid = self.config['comments'][nr][0]
-            cmt = request('https://api.github.com/gists/%s/comments/%s' % (str(self.config['gist']), cid),
-                    {'Authorization': 'token %s' % str(self.config['token'])}, '{ "body": "%s" }' % clip,
+            cmt = request('https://api.github.com/gists/%s/comments/%s' % (self.config['gist'], cid),
+                    {'Authorization': 'token %s' % self.config['token']}, '{ "body": "%s" }' % clip,
                     httpErrorHandler=self.commentsErrorHandler)
             if "error" in cmt:
                 vim.command("echohl WarningMsg | echo '%s'| echohl None" % cmt['error'])
@@ -222,7 +234,7 @@ class CloudBoard:
         self.listComments(['id'])
         for c in self.config['comments']:
             cid = c[0]
-            request('https://api.github.com/gists/%s/comments/%s' % (str(self.config['gist']), cid), {'Authorization': 'token %s' % str(self.config['token'])}, '{"body": "."}')
+            request('https://api.github.com/gists/%s/comments/%s' % (self.config['gist'], cid), {'Authorization': 'token %s' % self.config['token']}, '{"body": "."}')
         self.saveConfig()
 
 cloudBoard = CloudBoard()

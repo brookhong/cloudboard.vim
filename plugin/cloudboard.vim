@@ -57,6 +57,12 @@ function! cloudboard#Init()
     endif
 endfunction
 
+function! cloudboard#AutoClear(nr)
+    if <SID>LoadCloudBoard() == 1
+        exec 'python cloudBoard.setAutoClear('.a:nr.')'
+    endif
+endfunction
+
 function! cloudboard#Yank(nr, str)
     if <SID>LoadCloudBoard() == 1
         exec 'python cloudBoard.editComment('.a:nr.',"'.a:str.'")'
@@ -124,6 +130,7 @@ com! -nargs=* -range=% UrlEncode :call <SID>UrlEncodeRange(<line1>,<line2>,1)
 com! -nargs=* -range=% UrlDecode :call <SID>UrlEncodeRange(<line1>,<line2>,0)
 
 com! -nargs=0 CBInit :call cloudboard#Init()
+com! -nargs=1 CBAutoClear :call cloudboard#AutoClear(<f-args>)
 com! -nargs=1 -range=% CBYank :call cloudboard#Yank(<f-args>, cloudboard#UrlEncodeRange(<line1>, <line2>, 1))
 com! -nargs=1 CBPut :call cloudboard#Put(<f-args>)
 com! -nargs=0 CBList :call cloudboard#List()

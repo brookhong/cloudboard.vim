@@ -23,6 +23,12 @@ The number starts from 0, you can use anyone you'd like, for example:
 
 `:CBList` to put the contents from all cloud registers into current buffer.
 
+#### Auto Clear of Cloud Registers
+
+When AutoClear is turned on for a cloud register, the content of the cloud register will be cleared automatically after its content is read by a `CBPut` action.
+
+`:CBAutoClear 2` to toggle on/off AutoClear of cloud register 2.
+
 ### Cloud Files
 
 Cloud files are named files stored in a GITHUB gist.
