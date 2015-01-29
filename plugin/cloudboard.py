@@ -6,7 +6,26 @@
 # Copyright (c) Brook Hong.  Distributed under the same terms as Vim itself.
 # See :help license
 
-import base64, os
+import base64, os, vim
+import urllib, urllib2, json
+
+def request(url, headers, data=None, httpErrorHandler=None, json_decode=True):
+    req = urllib2.Request(url, data)
+    for k in headers.keys():
+        req.add_header(k, headers[k])
+    try:
+        response = urllib2.urlopen(req)
+        jstr = response.read()
+    except urllib2.HTTPError, e:
+        jstr = '{"error": "%s"}' % e
+        if httpErrorHandler:
+            httpErrorHandler(e)
+    except urllib2.URLError, e:
+        jstr = '{"error": "%s"}' % e
+    ret = jstr
+    if json_decode:
+        ret = json.loads(jstr)
+    return ret
 
 reload(sys)
 sys.setdefaultencoding('utf8')

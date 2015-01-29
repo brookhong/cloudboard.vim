@@ -11,7 +11,6 @@ endif
 
 let s:cloudboard_py = expand("<sfile>:p:h")."/cloudboard.py"
 
-exec 'pyfile '.expand("<sfile>:p:h")."/web_utils.py"
 
 let s:cloudboard_py_loaded = 0
 function! s:LoadCloudBoard()
