@@ -27,6 +27,7 @@ endfunction
 
 function! s:UrlEncode(str, dir)
     python << EOF
+import vim
 import urllib
 astr = vim.eval('a:str')
 dir = int(vim.eval('a:dir'))
