@@ -46,7 +46,7 @@ EOF
     return l:urlStr
 endfunction
 
-function! s:UrlEncodeRange(line1, line2, dir)
+function! s:_UrlEncodeRange(line1, line2, dir)
     let l:str = join(getline(a:line1, a:line2), "\n")
     return <SID>UrlEncode(l:str, a:dir)
 endfunction
@@ -106,7 +106,7 @@ function! s:ListFiles()
 endfunction
 
 function! s:UrlEncodeRange(line1, line2, dir)
-    let @z = <SID>UrlEncodeRange(a:line1, a:line2, a:dir)."\n"
+    let @z = <SID>_UrlEncodeRange(a:line1, a:line2, a:dir)."\n"
     exec a:line1.','.a:line2.'d'
     normal "zP
 endfunction
@@ -131,10 +131,10 @@ com! -nargs=* -range=% UrlDecode :call <SID>UrlEncodeRange(<line1>,<line2>,0)
 
 com! -nargs=0 CBInit :call <SID>Init()
 com! -nargs=1 CBAutoClear :call <SID>AutoClear(<f-args>)
-com! -nargs=1 -range=% CBYank :call <SID>Yank(<f-args>, <SID>UrlEncodeRange(<line1>, <line2>, 1))
+com! -nargs=1 -range=% CBYank :call <SID>Yank(<f-args>, <SID>_UrlEncodeRange(<line1>, <line2>, 1))
 com! -nargs=1 CBPut :call <SID>Put(<f-args>)
 com! -nargs=0 CBList :call <SID>List()
-com! -nargs=1 -complete=customlist,<SID>BufffersList -range=% CBSave :call <SID>Save(<f-args>, <SID>UrlEncodeRange(<line1>, <line2>, 1))
+com! -nargs=1 -complete=customlist,<SID>BufffersList -range=% CBSave :call <SID>Save(<f-args>, <SID>_UrlEncodeRange(<line1>, <line2>, 1))
 com! -nargs=1 -complete=customlist,<SID>BufffersList CBLoad :call <SID>Load(<f-args>)
 com! -nargs=1 -complete=customlist,<SID>BufffersList CBRm :call <SID>Delete(<f-args>)
 com! -nargs=0 CBListFiles :call <SID>ListFiles()
