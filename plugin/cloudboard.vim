@@ -16,6 +16,7 @@ let s:cloudboard_py_loaded = 0
 function! s:LoadCloudBoard()
     if s:cloudboard_py_loaded == 0
         if filereadable(s:cloudboard_py)
+            python import vim
             exec 'pyfile '.s:cloudboard_py
             let s:cloudboard_py_loaded = 1
         else

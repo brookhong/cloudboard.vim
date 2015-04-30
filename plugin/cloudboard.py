@@ -6,7 +6,7 @@
 # Copyright (c) Brook Hong.  Distributed under the same terms as Vim itself.
 # See :help license
 
-import base64, os, vim
+import base64, os, sys
 import urllib, urllib2, json
 
 def request(url, headers, data=None, httpErrorHandler=None, json_decode=True):
@@ -29,29 +29,17 @@ def request(url, headers, data=None, httpErrorHandler=None, json_decode=True):
 
 reload(sys)
 sys.setdefaultencoding('utf8')
-def initToken(username, password):
-    basicAuth = base64.encodestring('%s:%s' % (username, password)).replace('\n', '')
-    tokens = request('https://api.github.com/authorizations', {"Authorization": "Basic %s" % basicAuth})
-    token = ""
-    if "error" not in tokens:
-        for t in tokens:
-            if t['note'] == "cloudboard" and 'gist' in t['scopes']:
-                token = str(t['token'])
-                break
-        if token == "":
-            t = request('https://api.github.com/authorizations', {'Authorization': "Basic %s" % basicAuth}, '{ "scopes": [ "gist" ], "note": "cloudboard" }')
-            token = str(t['token'])
-    return token
 
 def initGist(token, name):
     gists = request('https://api.github.com/gists', {'Authorization': 'token %s' % token})
     gist = ""
+    ln = len(name)
     for g in gists:
-        if g['description'] == name and name in g['files']:
+        if g['description'][:ln] == name and g['description'] in g['files']:
             gist = str(g['id'])
             break
     if gist == "":
-        g = request('https://api.github.com/gists', {'Authorization': 'token %s' % token}, '{ "description": "%s", "public": false, "files": { "%s": { "content": "%s" } } }' % (name, name, name))
+        g = request('https://api.github.com/gists', {'Authorization': 'token %s' % token}, '{ "description": "%s", "public": false, "files": { "%s": { "content": "%s" } } }' % (name, name, token))
         gist = str(g['id'])
     return gist
 
@@ -85,32 +73,12 @@ class CloudBoard:
     def initToken(self):
         ret = False
         if module_exists("vim"):
-            vim.command("let g:cloudBoardOwn=input('To use CloudBoard, you need set up your exclusive one.\nUse your own GITHUB account(Y/N)?', 'Y')")
-            if vim.eval('g:cloudBoardOwn') == 'Y':
-                vim.command("let g:cloudBoardUser=input('GITHUB username:')")
-                vim.command("let g:cloudBoardPass=input('GITHUB password:')")
-                self.config['token'] = initToken(vim.eval( 'g:cloudBoardUser' ), vim.eval( 'g:cloudBoardPass' ))
-                if self.config['token'] == "":
-                    vim.command('echo "\nInvalid GITHUB account!"')
-                else:
-                    self.config['gist'] = initGist(self.config['token'], "cloudboard.%s" % (vim.eval( 'g:cloudBoardUser' )))
-                    ret = True
-                vim.command("unlet g:cloudBoardUser")
-                vim.command("unlet g:cloudBoardPass")
-            else:
-                self.config['token'] = '1012d87ff4b053d01ce2f90bd266f2a047567bd3'
-                vim.command("let g:cloudBoardEmail=input('An unique name for your CloudBoard(Your Email Address preferred):')")
-                if vim.eval( 'g:cloudBoardEmail' ) != "":
-                    self.config['gist'] = initGist(self.config['token'], "cloudboard.%s" % (vim.eval( 'g:cloudBoardEmail' )))
-                    ret = True
-                else:
-                    vim.command('echo "\nCloudBoard name is better to be unique!"')
-                vim.command("unlet g:cloudBoardEmail")
-            vim.command("unlet g:cloudBoardOwn")
-
-        if ret:
-            self.config['comments'] = []
-            self.saveConfig()
+            vim.command("let g:gistToken=input('To use CloudBoard, you must generate your personal access token(https://github.com/settings/tokens), then input it here:')")
+            if vim.eval('g:gistToken') != '':
+                self.config['token'] = vim.eval('g:gistToken')
+                self.config['gist'] = initGist(self.config['token'], "cloudboard")
+                ret = True
+            vim.command("unlet g:gistToken")
         return ret
 
     def newFile(self, name, content):
