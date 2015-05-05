@@ -70,15 +70,22 @@ class CloudBoard:
         configFile.write(json.dumps(self.config))
         configFile.close()
 
-    def initToken(self):
+    def initToken(self, gistToken=None):
         ret = False
         if module_exists("vim"):
             vim.command("let g:gistToken=input('To use CloudBoard, you must generate your personal access token(https://github.com/settings/tokens), then input it here:')")
             if vim.eval('g:gistToken') != '':
                 self.config['token'] = vim.eval('g:gistToken')
                 self.config['gist'] = initGist(self.config['token'], "cloudboard")
+                self.listComments(['id'])
                 ret = True
             vim.command("unlet g:gistToken")
+        elif gistToken:
+            self.config['token'] = gistToken
+            self.config['gist'] = initGist(self.config['token'], "cloudboard")
+            self.listComments(['id'])
+            print self.config['comments']
+            ret = True
         return ret
 
     def newFile(self, name, content):
@@ -225,3 +232,5 @@ class CloudBoard:
         self.saveConfig()
 
 cloudBoard = CloudBoard()
+if len(sys.argv) > 1:
+    cloudBoard.initToken(sys.argv[1])
