@@ -35,7 +35,7 @@ def initGist(token, name):
     gist = ""
     ln = len(name)
     for g in gists:
-        if g['description'][:ln] == name and g['description'] in g['files']:
+        if 'description' in g and g['description'] and g['description'][:ln] == name and g['description'] in g['files']:
             gist = str(g['id'])
             break
     if gist == "":
