@@ -66,13 +66,29 @@ endfunction
 
 function! s:Yank(nr, str)
     if <SID>LoadCloudBoard() == 1
-        exec 'python cloudBoard.editComment('.a:nr.',"'.a:str.'")'
+        if a:nr =~ '^\d\+$'
+            " number registers are all for github's gists.
+            exec 'python cloudBoard.editComment('.a:nr.',"'.a:str.'")'
+        else
+            exec 'python cloudBoard.editInternalComment("'.a:nr.'","'.a:str.'")'
+        endif
     endif
 endfunction
 
 function! s:Put(nr)
     if <SID>LoadCloudBoard() == 1
-        exec 'python cloudBoard.readComment('.a:nr.')'
+        if a:nr =~ '^\d\+$'
+            " number registers are all for github's gists.
+            exec 'python cloudBoard.readComment('.a:nr.')'
+        else
+            exec 'python cloudBoard.readInternalComment("'.a:nr.'")'
+        endif
+    endif
+endfunction
+
+function! s:addInternalURL(nr, url, auth_code)
+    if <SID>LoadCloudBoard() == 1
+        exec 'python cloudBoard.addInternalURL("'.a:nr.'","'.a:url.'","'.a:auth_code.'")'
     endif
 endfunction
 
@@ -139,3 +155,4 @@ com! -nargs=1 -complete=customlist,<SID>BufffersList -range=% CBSave :call <SID>
 com! -nargs=1 -complete=customlist,<SID>BufffersList CBLoad :call <SID>Load(<f-args>)
 com! -nargs=1 -complete=customlist,<SID>BufffersList CBRm :call <SID>Delete(<f-args>)
 com! -nargs=0 CBListFiles :call <SID>ListFiles()
+com! -nargs=+ CBAddInternalURL :call <SID>addInternalURL(<f-args>)

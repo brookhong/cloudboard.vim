@@ -46,6 +46,25 @@ Cloud files is better when the text is huge, especial in case of that you prefer
     nnoremap <space>p :CBPut 
     vnoremap <space>y :CBYank 
 
+### Use it with internal simple service instead of gist
+
+1. start an internal simple service as below:
+
+        python plugin/internal.py <port> <any_name>:<any_pass>
+eg.
+
+        python plugin/internal.py 8080 brookhong:123456
+The simple service will print auth_code, which will be used next step.
+
+2. open vim, and run command:
+
+        CBAddInternalURL a http://<ip_of_running_internal_service>:8080/rega <auth_code_from_output_above>
+eg.
+
+        CBAddInternalURL a http://192.168.0.1:8080/rega YnJvb2tob25nOjEyMzQ1Ng==
+
+3. Now, `CBYank a` and `CBPut a` will work with register `a`. You can add many other more registers in this way.
+
 # Installation
 
 Your VIM must have python support, check it with `:python print 'hello'`.

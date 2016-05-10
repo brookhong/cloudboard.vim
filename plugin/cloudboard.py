@@ -180,6 +180,27 @@ class CloudBoard:
             vim.command("echo 'AutoClear has been enabled for cloud register %s.'" % nr)
         self.saveConfig()
 
+    def readInternalComment(self, nr):
+        conf = self.config['self_service'][nr]
+        cmt = request(conf['url'], {'Authorization': "Basic " + conf['auth_code']}, json_decode=False)
+        comment = cmt.encode('utf8')
+        if len(comment) > 1:
+            comment = urllib.unquote_plus(comment).replace("'", "''")
+            vim.command("let @c='%s'" % comment)
+            vim.command('normal "cp')
+
+    def editInternalComment(self, nr, clip):
+        conf = self.config['self_service'][nr]
+        request(conf['url'], {'Authorization': "Basic " + conf['auth_code']}, clip, json_decode=False)
+
+    def addInternalURL(self, nr, url, auth_code):
+        if 'self_service' not in self.config:
+            self.config['self_service'] = {}
+        self.config['self_service'][nr] = {}
+        self.config['self_service'][nr]['url'] = url
+        self.config['self_service'][nr]['auth_code'] = auth_code
+        self.saveConfig()
+
     def readComment(self, nr):
         if 'comments' not in self.config:
             self.listComments(['id'])
