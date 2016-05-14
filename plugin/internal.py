@@ -19,7 +19,6 @@ import shelve
 from urlparse import urlparse, parse_qs
 
 class StoreHandler(BaseHTTPServer.BaseHTTPRequestHandler):
-    shelve_db = shelve.open("./internal_board")
     secret_key = ""
 
     def do_AUTHHEAD(self):
@@ -35,8 +34,10 @@ class StoreHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.end_headers()
 
             urlpath = urlparse(self.path)
-            if self.shelve_db.has_key(urlpath.path):
-                self.wfile.write(self.shelve_db[urlpath.path].encode())
+            shelve_db = shelve.open("./internal_board")
+            if shelve_db.has_key(urlpath.path):
+                self.wfile.write(shelve_db[urlpath.path].encode())
+            shelve_db.close()
         else:
             self.do_AUTHHEAD()
             self.wfile.write('no auth header received')
@@ -48,13 +49,17 @@ class StoreHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
             urlpath = urlparse(self.path)
             query_components = parse_qs(urlpath.query)
+            shelve_db = shelve.open("./internal_board")
             if 'append' in query_components and query_components['append'][0] == "1":
-                orig = self.shelve_db[urlpath.path]
-                data = orig + data
-                self.shelve_db[urlpath.path] = data.decode()
+                if shelve_db.has_key(urlpath.path):
+                    orig = shelve_db[urlpath.path]
+                    data = orig + data
+                shelve_db[urlpath.path] = data.decode()
             else:
-                self.shelve_db[urlpath.path] = data.decode()
+                shelve_db[urlpath.path] = data.decode()
+            shelve_db.close()
             self.send_response(200)
+            self.end_headers()
         else:
             self.do_AUTHHEAD()
             self.wfile.write('no auth header received')
