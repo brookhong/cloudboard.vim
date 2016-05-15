@@ -50,10 +50,10 @@ Cloud files is better when the text is huge, especial in case of that you prefer
 
 1. start an internal simple service as below:
 
-        python plugin/internal.py <port> <any_name>:<any_pass>
+        python plugin/internal.py
 eg.
 
-        python plugin/internal.py 8080 brookhong:123456
+        python plugin/internal.py -a brookhong:123456
 The simple service will print auth_code, which will be used next step.
 
 2. open vim, and run command:

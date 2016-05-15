@@ -6,11 +6,11 @@
 # Copyright (c) Brook Hong.  Distributed under the same terms as Vim itself.
 # See :help license
 
-#  python plugin/internal.py 8080 brookhong:123
+#  python plugin/internal.py -p 8080 -a brookhong:123
 #  curl -s -H "Authorization:Basic YnJvb2tob25nOjEyMw==" http://127.0.0.1:8080/a
 #  curl -s -H "Authorization:Basic YnJvb2tob25nOjEyMw==" --data "happy birthday" http://127.0.0.1:8080/a
 #  curl -s -H "Authorization:Basic YnJvb2tob25nOjEyMw==" --data "good more" http://127.0.0.1:8080/a?append=1
-import os.path;
+import os.path
 
 import BaseHTTPServer
 import sys, signal
@@ -19,7 +19,9 @@ import shelve
 from urlparse import urlparse, parse_qs
 
 class StoreHandler(BaseHTTPServer.BaseHTTPRequestHandler):
+    protocol_version = "HTTP/1.0"
     secret_key = ""
+    db_file = os.getenv("HOME") + '/.cloudboard'
 
     def do_AUTHHEAD(self):
         print "send header"
@@ -29,12 +31,12 @@ class StoreHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         self.end_headers()
 
     def do_GET(self):
-        if self.secret_key != "" and self.headers.getheader('Authorization') == 'Basic '+self.secret_key:
+        if self.secret_key == "" or self.headers.getheader('Authorization') == 'Basic '+self.secret_key:
             self.send_response(200)
             self.end_headers()
 
             urlpath = urlparse(self.path)
-            shelve_db = shelve.open("./internal_board")
+            shelve_db = shelve.open(self.db_file)
             if shelve_db.has_key(urlpath.path):
                 self.wfile.write(shelve_db[urlpath.path].encode())
             shelve_db.close()
@@ -43,13 +45,13 @@ class StoreHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.wfile.write('no auth header received')
 
     def do_POST(self):
-        if self.secret_key != "" and self.headers.getheader('Authorization') == 'Basic '+self.secret_key:
+        if self.secret_key == "" or self.headers.getheader('Authorization') == 'Basic '+self.secret_key:
             length = self.headers['content-length']
             data = self.rfile.read(int(length))
 
             urlpath = urlparse(self.path)
             query_components = parse_qs(urlpath.query)
-            shelve_db = shelve.open("./internal_board")
+            shelve_db = shelve.open(self.db_file)
             if 'append' in query_components and query_components['append'][0] == "1":
                 if shelve_db.has_key(urlpath.path):
                     orig = shelve_db[urlpath.path]
@@ -69,12 +71,30 @@ def signal_handler(signal, frame):
     sys.exit(0)
 
 if __name__ == '__main__':
-    if len(sys.argv)<2:
-        print "usage internal.py [port] [username:password]"
-        sys.exit()
-    if len(sys.argv) == 3:
-        StoreHandler.secret_key = base64.b64encode(sys.argv[2])
+    from optparse import OptionParser
+    parser = OptionParser()
+    parser.add_option("-p", "--port", dest="port",
+            help="listen on PORT, default as 8080", metavar="PORT")
+    parser.add_option("-a", "--auth", dest="auth",
+            help="use AUTH as basic authentication, like 'brookhong:123'", metavar="AUTH")
+    parser.add_option("-f", "--file", dest="db_file",
+            help="use FILE as a db file to store data, default as ~/.cloudboard", metavar="FILE")
+
+    (options, args) = parser.parse_args()
+    port = 8080
+    if options.port:
+        port = int(options.port)
+
+    if options.auth:
+        StoreHandler.secret_key = base64.b64encode(options.auth)
         print "auth_code: " + StoreHandler.secret_key
 
+    if options.db_file:
+        StoreHandler.db_file = options.db_file
+
     signal.signal(signal.SIGINT, signal_handler)
-    BaseHTTPServer.test(StoreHandler, BaseHTTPServer.HTTPServer)
+
+    httpd = BaseHTTPServer.HTTPServer(('', port), StoreHandler)
+    sa = httpd.socket.getsockname()
+    print "Serving HTTP on", sa[0], "port", sa[1], "..."
+    httpd.serve_forever()
