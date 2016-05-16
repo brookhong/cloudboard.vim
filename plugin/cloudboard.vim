@@ -86,9 +86,9 @@ function! s:Put(nr)
     endif
 endfunction
 
-function! s:addInternalURL(nr, url, auth_code)
+function! s:addInternalURL(internalBoard)
     if <SID>LoadCloudBoard() == 1
-        exec 'python cloudBoard.addInternalURL("'.a:nr.'","'.a:url.'","'.a:auth_code.'")'
+        exec 'python cloudBoard.addInternalURL("'.a:internalBoard.'")'
     endif
 endfunction
 
@@ -155,4 +155,4 @@ com! -nargs=1 -complete=customlist,<SID>BufffersList -range=% CBSave :call <SID>
 com! -nargs=1 -complete=customlist,<SID>BufffersList CBLoad :call <SID>Load(<f-args>)
 com! -nargs=1 -complete=customlist,<SID>BufffersList CBRm :call <SID>Delete(<f-args>)
 com! -nargs=0 CBListFiles :call <SID>ListFiles()
-com! -nargs=+ CBAddInternalURL :call <SID>addInternalURL(<f-args>)
+com! -nargs=+ CBAddInternalURL :call <SID>addInternalURL(<q-args>)

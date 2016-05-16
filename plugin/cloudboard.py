@@ -6,7 +6,7 @@
 # Copyright (c) Brook Hong.  Distributed under the same terms as Vim itself.
 # See :help license
 
-import base64, os, sys
+import base64, os, sys, re
 import urllib, urllib2, json
 
 def request(url, headers, data=None, httpErrorHandler=None, json_decode=True):
@@ -182,7 +182,10 @@ class CloudBoard:
 
     def readInternalComment(self, nr):
         conf = self.config['self_service'][nr]
-        cmt = request(conf['url'], {'Authorization': "Basic " + conf['auth_code']}, json_decode=False)
+        headers = {}
+        if 'auth_code' in conf:
+            headers['Authorization'] = "Basic " + conf['auth_code']
+        cmt = request(conf['url'], headers, json_decode=False)
         comment = cmt.encode('utf8')
         if len(comment) > 1:
             comment = urllib.unquote_plus(comment).replace("'", "''")
@@ -191,14 +194,21 @@ class CloudBoard:
 
     def editInternalComment(self, nr, clip):
         conf = self.config['self_service'][nr]
-        request(conf['url'], {'Authorization': "Basic " + conf['auth_code']}, clip, json_decode=False)
+        headers = {}
+        if 'auth_code' in conf:
+            headers['Authorization'] = "Basic " + conf['auth_code']
+        request(conf['url'], headers, clip, json_decode=False)
 
-    def addInternalURL(self, nr, url, auth_code):
+    def addInternalURL(self, internalBoard):
+        args = re.compile("\s+").split(internalBoard)
+        nr = args[0]
+        url = args[1]
         if 'self_service' not in self.config:
             self.config['self_service'] = {}
         self.config['self_service'][nr] = {}
         self.config['self_service'][nr]['url'] = url
-        self.config['self_service'][nr]['auth_code'] = auth_code
+        if len(args) > 2:
+            self.config['self_service'][nr]['auth_code'] = args[2]
         self.saveConfig()
 
     def readComment(self, nr):
