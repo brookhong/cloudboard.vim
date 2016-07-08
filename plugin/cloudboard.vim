@@ -5,7 +5,17 @@
 " Copyright (c) Brook Hong.  Distributed under the same terms as Vim itself.
 " See :help license
 
-if !has("python")
+let g:pycmd = ""
+let g:pyfcmd = ""
+if has("python")
+    let g:pycmd = "python "
+    let g:pyfcmd = "pyfile "
+elseif has("python3")
+    let g:pycmd = "python3 "
+    let g:pyfcmd = "py3file "
+endif
+
+if g:pycmd == ""
     finish
 endif
 
@@ -16,8 +26,8 @@ let s:cloudboard_py_loaded = 0
 function! s:LoadCloudBoard()
     if s:cloudboard_py_loaded == 0
         if filereadable(s:cloudboard_py)
-            python import vim
-            exec 'pyfile '.s:cloudboard_py
+            exec g:pycmd." import vim"
+            exec g:pyfcmd.s:cloudboard_py
             let s:cloudboard_py_loaded = 1
         else
             call confirm('cloudboard.vim: Unable to find '.s:cloudboard_py.'. Place it in either your home vim directory or in the Vim runtime directory.', 'OK')
@@ -27,22 +37,11 @@ function! s:LoadCloudBoard()
 endfunction
 
 function! s:UrlEncode(str, dir)
-    python << EOF
-import vim
-import urllib
-astr = vim.eval('a:str')
-dir = int(vim.eval('a:dir'))
-if dir:
-    urlStr = urllib.quote_plus(astr)
-    vim.command(('let l:urlStr="%s"') % urlStr)
-else:
-    urlStr = urllib.unquote_plus(astr)
-    urlStr = urlStr.replace("'", "''")
-    vim.command("let l:urlStr='%s'" % urlStr)
-EOF
-    if type(l:urlStr) == type([])
-        let l:tmp = join(l:urlStr, "\n")
-        return l:tmp
+    let l:urlStr = ""
+    let l:astr = a:str
+    let l:adir = a:dir
+    if <SID>LoadCloudBoard() == 1
+        exec g:pycmd.'UrlEncode()'
     endif
     return l:urlStr
 endfunction
@@ -54,13 +53,13 @@ endfunction
 
 function! s:Init()
     if <SID>LoadCloudBoard() == 1
-        exec 'python cloudBoard.initToken()'
+        exec g:pycmd.'cloudBoard.initToken()'
     endif
 endfunction
 
 function! s:AutoClear(nr)
     if <SID>LoadCloudBoard() == 1
-        exec 'python cloudBoard.setAutoClear('.a:nr.')'
+        exec g:pycmd.'cloudBoard.setAutoClear('.a:nr.')'
     endif
 endfunction
 
@@ -68,9 +67,9 @@ function! s:Yank(nr, str)
     if <SID>LoadCloudBoard() == 1
         if a:nr =~ '^\d\+$'
             " number registers are all for github's gists.
-            exec 'python cloudBoard.editComment('.a:nr.',"'.a:str.'")'
+            exec g:pycmd.'cloudBoard.editComment('.a:nr.',"'.a:str.'")'
         else
-            exec 'python cloudBoard.editInternalComment("'.a:nr.'","'.a:str.'")'
+            exec g:pycmd.'cloudBoard.editInternalComment("'.a:nr.'","'.a:str.'")'
         endif
     endif
 endfunction
@@ -79,46 +78,46 @@ function! s:Put(nr)
     if <SID>LoadCloudBoard() == 1
         if a:nr =~ '^\d\+$'
             " number registers are all for github's gists.
-            exec 'python cloudBoard.readComment('.a:nr.')'
+            exec g:pycmd.'cloudBoard.readComment('.a:nr.')'
         else
-            exec 'python cloudBoard.readInternalComment("'.a:nr.'")'
+            exec g:pycmd.'cloudBoard.readInternalComment("'.a:nr.'")'
         endif
     endif
 endfunction
 
 function! s:addInternalURL(internalBoard)
     if <SID>LoadCloudBoard() == 1
-        exec 'python cloudBoard.addInternalURL("'.a:internalBoard.'")'
+        exec g:pycmd.'cloudBoard.addInternalURL("'.a:internalBoard.'")'
     endif
 endfunction
 
 function! s:List()
     if <SID>LoadCloudBoard() == 1
-        python cloudBoard.readComments()
+        exec g:pycmd."cloudBoard.readComments()"
     endif
 endfunction
 
 function! s:Save(name, str)
     if <SID>LoadCloudBoard() == 1
-        exec 'python cloudBoard.newFile("'.a:name.'","'.a:str.'")'
+        exec g:pycmd.'cloudBoard.newFile("'.a:name.'","'.a:str.'")'
     endif
 endfunction
 
 function! s:Load(name)
     if <SID>LoadCloudBoard() == 1
-        exec 'python cloudBoard.readFile("'.a:name.'")'
+        exec g:pycmd.'cloudBoard.readFile("'.a:name.'")'
     endif
 endfunction
 
 function! s:Delete(name)
     if <SID>LoadCloudBoard() == 1
-        exec 'python cloudBoard.deleteFile("'.a:name.'")'
+        exec g:pycmd.'cloudBoard.deleteFile("'.a:name.'")'
     endif
 endfunction
 
 function! s:ListFiles()
     if <SID>LoadCloudBoard() == 1
-        python cloudBoard.readFiles()
+        exec g:pycmd."cloudBoard.readFiles()"
     endif
 endfunction
 

@@ -10,13 +10,17 @@
 #  curl -s -H "Authorization:Basic YnJvb2tob25nOjEyMw==" http://127.0.0.1:8080/a
 #  curl -s -H "Authorization:Basic YnJvb2tob25nOjEyMw==" --data "happy birthday" http://127.0.0.1:8080/a
 #  curl -s -H "Authorization:Basic YnJvb2tob25nOjEyMw==" --data "good more" http://127.0.0.1:8080/a?append=1
-import os.path
+import os.path, sys
 
-import BaseHTTPServer
+if sys.version_info[0] == 2:
+    import BaseHTTPServer
+    import urlparse
+else:
+    import http.server as BaseHTTPServer
+    import urllib.parse as urlparse
 import sys, signal
 import base64
 import shelve
-from urlparse import urlparse, parse_qs
 
 class StoreHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     protocol_version = "HTTP/1.0"
@@ -24,7 +28,7 @@ class StoreHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     db_file = os.getenv("HOME") + '/.cloudboard'
 
     def do_AUTHHEAD(self):
-        print "send header"
+        print("send header")
         self.send_response(401)
         self.send_header('WWW-Authenticate', 'Basic realm=\"Test\"')
         self.send_header('Content-type', 'text/html')
@@ -35,9 +39,9 @@ class StoreHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.send_response(200)
             self.end_headers()
 
-            urlpath = urlparse(self.path)
+            urlpath = urlparse.urlparse(self.path)
             shelve_db = shelve.open(self.db_file)
-            if shelve_db.has_key(urlpath.path):
+            if 'has_key' in shelve_db and shelve_db.has_key(urlpath.path) or urlpath.path in shelve_db:
                 self.wfile.write(shelve_db[urlpath.path].encode())
             shelve_db.close()
         else:
@@ -49,11 +53,11 @@ class StoreHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             length = self.headers['content-length']
             data = self.rfile.read(int(length))
 
-            urlpath = urlparse(self.path)
-            query_components = parse_qs(urlpath.query)
+            urlpath = urlparse.urlparse(self.path)
+            query_components = urlparse.parse_qs(urlpath.query)
             shelve_db = shelve.open(self.db_file)
             if 'append' in query_components and query_components['append'][0] == "1":
-                if shelve_db.has_key(urlpath.path):
+                if 'has_key' in shelve_db and shelve_db.has_key(urlpath.path) or urlpath.path in shelve_db:
                     orig = shelve_db[urlpath.path]
                     data = orig + data
                 shelve_db[urlpath.path] = data.decode()
@@ -87,7 +91,7 @@ if __name__ == '__main__':
 
     if options.auth:
         StoreHandler.secret_key = base64.b64encode(options.auth)
-        print "auth_code: " + StoreHandler.secret_key
+        print("auth_code: " + StoreHandler.secret_key)
 
     if options.db_file:
         StoreHandler.db_file = options.db_file
@@ -96,5 +100,5 @@ if __name__ == '__main__':
 
     httpd = BaseHTTPServer.HTTPServer(('', port), StoreHandler)
     sa = httpd.socket.getsockname()
-    print "Serving HTTP on", sa[0], "port", sa[1], "..."
+    print("Serving HTTP on", sa[0], "port", sa[1], "...")
     httpd.serve_forever()

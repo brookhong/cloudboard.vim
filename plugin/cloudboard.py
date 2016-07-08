@@ -7,28 +7,48 @@
 # See :help license
 
 import base64, os, sys, re
-import urllib, urllib2, json
+import urllib, json
+
+if sys.version_info[0] == 2:
+    import urllib2
+    import urllib as urlparse
+    reload(sys)
+    sys.setdefaultencoding('utf8')
+else:
+    import urllib.request as urllib2
+    import urllib.parse as urlparse
 
 def request(url, headers, data=None, httpErrorHandler=None, json_decode=True):
+    if data:
+        data = data.encode('utf-8')
     req = urllib2.Request(url, data)
     for k in headers.keys():
         req.add_header(k, headers[k])
     try:
         response = urllib2.urlopen(req)
-        jstr = response.read()
-    except urllib2.HTTPError, e:
+        jstr = response.read().decode('utf-8')
+    except urllib2.HTTPError as e:
         jstr = '{"error": "%s"}' % e
         if httpErrorHandler:
             httpErrorHandler(e)
-    except urllib2.URLError, e:
+    except urllib2.URLError as e:
         jstr = '{"error": "%s"}' % e
     ret = jstr
     if json_decode:
         ret = json.loads(jstr)
     return ret
 
-reload(sys)
-sys.setdefaultencoding('utf8')
+def UrlEncode():
+    if module_exists("vim"):
+        astr = vim.eval('l:astr')
+        dir = int(vim.eval('l:adir'))
+        if dir:
+            urlStr = urlparse.quote_plus(astr)
+        else:
+            urlStr = urlparse.unquote_plus(astr)
+            urlStr = urlStr.replace("'", "''")
+        vim.command("let l:urlStr='%s'" % urlStr)
+        return urlStr
 
 def initGist(token, name):
     gists = request('https://api.github.com/gists', {'Authorization': 'token %s' % token})
@@ -84,7 +104,7 @@ class CloudBoard:
             self.config['token'] = gistToken
             self.config['gist'] = initGist(self.config['token'], "cloudboard")
             self.listComments(['id'])
-            print self.config['comments']
+            print(self.config['comments'])
             ret = True
         return ret
 
@@ -111,7 +131,7 @@ class CloudBoard:
             if "files" in gist and name in gist['files']:
                 furl = gist['files'][name]['raw_url']
                 content = request(furl, {'Authorization': 'token %s' % self.config['token']}, json_decode=False)
-                content = urllib.unquote_plus(content).replace("'", "''")
+                content = urlparse.unquote_plus(content).replace("'", "''")
                 vim.command("let @c='%s'" % content)
                 vim.command('normal "cp')
             else:
@@ -127,7 +147,7 @@ class CloudBoard:
                 for name in gist['files']:
                     furl = gist['files'][name]['raw_url']
                     cmt = request(furl, {'Authorization': 'token %s' % self.config['token']}, json_decode=False)
-                    cmt = '%s %s %s\n%s\n' % ('>'*16, name, '<'*16, urllib.unquote_plus(cmt).replace("'", "''"))
+                    cmt = '%s %s %s\n%s\n' % ('>'*16, name, '<'*16, urlparse.unquote_plus(cmt).replace("'", "''"))
                     content = content + cmt
                 vim.command("let @c='%s'" % content)
                 vim.command('normal "cp')
@@ -139,7 +159,7 @@ class CloudBoard:
         elif e.code == 401:
             self.initToken()
         else:
-            print e
+            print(e)
 
     def listComments(self, fields):
         if 'token' not in self.config or 'gist' not in self.config:
@@ -150,9 +170,9 @@ class CloudBoard:
             if 'error' in comments:
                 self.initToken()
             else:
-                self.config['comments'] = map(lambda c: [c['id']], comments)
+                self.config['comments'] = list(map(lambda c: [c['id']], comments))
                 self.saveConfig()
-                comments = map(lambda c: [c[k] for k in fields], comments)
+                comments = list(map(lambda c: [c[k] for k in fields], comments))
         return comments
 
     def newComment(self, clip):
@@ -163,7 +183,7 @@ class CloudBoard:
         allcomts = ""
         hid = 0
         for c in comments:
-            cmt = '%s %d %s\n%s\n' % ('>'*16, hid, '<'*16, urllib.unquote_plus(c[0]).replace("'", "''"))
+            cmt = '%s %d %s\n%s\n' % ('>'*16, hid, '<'*16, urlparse.unquote_plus(c[0]).replace("'", "''"))
             allcomts = allcomts + cmt
             hid = hid + 1
         vim.command("let @c='%s'" % allcomts)
@@ -181,23 +201,28 @@ class CloudBoard:
         self.saveConfig()
 
     def readInternalComment(self, nr):
-        conf = self.config['self_service'][nr]
-        headers = {}
-        if 'auth_code' in conf:
-            headers['Authorization'] = "Basic " + conf['auth_code']
-        cmt = request(conf['url'], headers, json_decode=False)
-        comment = cmt.encode('utf8')
-        if len(comment) > 1:
-            comment = urllib.unquote_plus(comment).replace("'", "''")
-            vim.command("let @c='%s'" % comment)
-            vim.command('normal "cp')
+        if 'self_service' in self.config and nr in self.config['self_service']:
+            conf = self.config['self_service'][nr]
+            headers = {}
+            if 'auth_code' in conf:
+                headers['Authorization'] = "Basic " + conf['auth_code']
+            cmt = request(conf['url'], headers, json_decode=False)
+            if len(cmt) > 1:
+                comment = urlparse.unquote_plus(cmt).replace("'", "''")
+                vim.command("let @c='%s'" % comment)
+                vim.command('normal "cp')
+        else:
+            print("%s not registered." % nr)
 
     def editInternalComment(self, nr, clip):
-        conf = self.config['self_service'][nr]
-        headers = {}
-        if 'auth_code' in conf:
-            headers['Authorization'] = "Basic " + conf['auth_code']
-        request(conf['url'], headers, clip, json_decode=False)
+        if 'self_service' in self.config and nr in self.config['self_service']:
+            conf = self.config['self_service'][nr]
+            headers = {}
+            if 'auth_code' in conf:
+                headers['Authorization'] = "Basic " + conf['auth_code']
+            request(conf['url'], headers, clip, json_decode=False)
+        else:
+            print("%s not registered." % nr)
 
     def addInternalURL(self, internalBoard):
         args = re.compile("\s+").split(internalBoard)
@@ -223,9 +248,9 @@ class CloudBoard:
                 if "error" in cmt:
                     vim.command("echohl WarningMsg | echo '%s'| echohl None" % cmt['error'])
                 else:
-                    comment = cmt['body'].encode('utf8')
+                    comment = cmt['body']
                     if len(comment) > 1:
-                        comment = urllib.unquote_plus(comment).replace("'", "''")
+                        comment = urlparse.unquote_plus(comment).replace("'", "''")
                         vim.command("let @c='%s'" % comment)
                         vim.command('normal "cp')
                         if 'autoclear' in self.config and nr in self.config['autoclear']:
