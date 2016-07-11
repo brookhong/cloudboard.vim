@@ -12,8 +12,6 @@ import urllib, json
 if sys.version_info[0] == 2:
     import urllib2
     import urllib as urlparse
-    reload(sys)
-    sys.setdefaultencoding('utf8')
 else:
     import urllib.request as urllib2
     import urllib.parse as urlparse
@@ -207,6 +205,8 @@ class CloudBoard:
             if 'auth_code' in conf:
                 headers['Authorization'] = "Basic " + conf['auth_code']
             cmt = request(conf['url'], headers, json_decode=False)
+            if sys.version_info[0] == 2:
+                cmt = cmt.encode('utf8')
             if len(cmt) > 1:
                 comment = urlparse.unquote_plus(cmt).replace("'", "''")
                 vim.command("let @c='%s'" % comment)
@@ -249,6 +249,8 @@ class CloudBoard:
                     vim.command("echohl WarningMsg | echo '%s'| echohl None" % cmt['error'])
                 else:
                     comment = cmt['body']
+                    if sys.version_info[0] == 2:
+                        comment = comment.encode('utf8')
                     if len(comment) > 1:
                         comment = urlparse.unquote_plus(comment).replace("'", "''")
                         vim.command("let @c='%s'" % comment)
