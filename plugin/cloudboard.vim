@@ -36,7 +36,7 @@ function! s:LoadCloudBoard()
     return s:cloudboard_py_loaded
 endfunction
 
-function! s:UrlEncode(str, dir)
+function! CBUrlEncode(str, dir)
     let l:urlStr = ""
     let l:astr = a:str
     let l:adir = a:dir
@@ -48,7 +48,7 @@ endfunction
 
 function! s:_UrlEncodeRange(line1, line2, dir)
     let l:str = join(getline(a:line1, a:line2), "\n")
-    return <SID>UrlEncode(l:str, a:dir)
+    return CBUrlEncode(l:str, a:dir)
 endfunction
 
 function! s:Init()
@@ -63,7 +63,7 @@ function! s:AutoClear(nr)
     endif
 endfunction
 
-function! s:Yank(nr, str)
+function! CBYank(nr, str)
     if <SID>LoadCloudBoard() == 1
         if a:nr =~ '^\d\+$'
             " number registers are all for github's gists.
@@ -147,7 +147,7 @@ com! -nargs=* -range=% UrlDecode :call <SID>UrlEncodeRange(<line1>,<line2>,0)
 
 com! -nargs=0 CBInit :call <SID>Init()
 com! -nargs=1 CBAutoClear :call <SID>AutoClear(<f-args>)
-com! -nargs=1 -range=% CBYank :call <SID>Yank(<f-args>, <SID>_UrlEncodeRange(<line1>, <line2>, 1))
+com! -nargs=1 -range=% CBYank :call CBYank(<f-args>, <SID>_UrlEncodeRange(<line1>, <line2>, 1))
 com! -nargs=1 CBPut :call <SID>Put(<f-args>)
 com! -nargs=0 CBList :call <SID>List()
 com! -nargs=1 -complete=customlist,<SID>BufffersList -range=% CBSave :call <SID>Save(<f-args>, <SID>_UrlEncodeRange(<line1>, <line2>, 1))
