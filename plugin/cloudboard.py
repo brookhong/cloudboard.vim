@@ -201,12 +201,20 @@ class CloudBoard:
     def readInternalComment(self, nr):
         if 'self_service' in self.config and nr in self.config['self_service']:
             conf = self.config['self_service'][nr]
-            headers = {}
-            if 'auth_code' in conf:
-                headers['Authorization'] = "Basic " + conf['auth_code']
-            cmt = request(conf['url'], headers, json_decode=False)
-            if sys.version_info[0] == 2:
-                cmt = cmt.encode('utf8')
+
+            if 'pull_cmd' in conf:
+                result = json.loads(vim.eval("system(\"%s\")" % conf['pull_cmd']))
+                if 'pull_json' in conf:
+                    result = eval(conf['pull_json'])
+                cmt = result
+            else:
+                headers = {}
+                if 'auth_code' in conf:
+                    headers['Authorization'] = "Basic " + conf['auth_code']
+                cmt = request(conf['url'], headers, json_decode=False)
+                if sys.version_info[0] == 2:
+                    cmt = cmt.encode('utf8')
+
             if len(cmt) > 1:
                 comment = urlparse.unquote_plus(cmt).replace("'", "''")
                 vim.command("let @c='%s'" % comment)
@@ -217,10 +225,15 @@ class CloudBoard:
     def editInternalComment(self, nr, clip):
         if 'self_service' in self.config and nr in self.config['self_service']:
             conf = self.config['self_service'][nr]
-            headers = {}
-            if 'auth_code' in conf:
-                headers['Authorization'] = "Basic " + conf['auth_code']
-            request(conf['url'], headers, clip, json_decode=False)
+
+            if 'push_cmd' in conf:
+                push_cmd = conf['push_cmd'] % clip
+                vim.eval("system(\"%s\")" % push_cmd)
+            else:
+                headers = {}
+                if 'auth_code' in conf:
+                    headers['Authorization'] = "Basic " + conf['auth_code']
+                request(conf['url'], headers, clip, json_decode=False)
         else:
             print("%s not registered." % nr)
 

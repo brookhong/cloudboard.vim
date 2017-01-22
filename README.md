@@ -65,6 +65,24 @@ eg.
 
 3. Now, `CBYank a` and `CBPut a` will work with register `a`. You can add many other more registers in this way.
 
+### Use third party REST service with curl
+
+Some example of ~/.cloudboard.json here.
+
+    {
+        "self_service": {
+            "z": {
+                "push_cmd": "curl -s -u : --anyauth --location-trusted -b ~/.cloudboard.azn.cookie -c ~/.cloudboard.azn.cookie -H 'Content-Type: application/json' -d '{ \\\"pathEdits\\\": [ { \\\"editAction\\\": \\\"PUT\\\", \\\"path\\\": \\\"/description\\\", \\\"data\\\": \\\"%s\\\" } ] }' https://api.xxx.com/notes/133/edits",
+                "pull_cmd": "curl -s -u : --anyauth --location-trusted -b ~/.cloudboard.azn.cookie -c ~/.cloudboard.azn.cookie https://api.xxx.com/notes/133",
+                "pull_json": "result['description']"
+            },
+        }
+    }
+
+* `push_cmd` is the curl command to put text on remote storage, `%s` is the placeholder for the text to put.
+* `pull_cmd` is the curl command to yank text from remote storage.
+* `pull_json` is the expression to extract text from response of remote service, if that is a JSON response.
+
 # Installation
 
 Your VIM must have python support, check it with `:python print 'hello'`.
