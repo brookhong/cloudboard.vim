@@ -83,6 +83,18 @@ Some example of ~/.cloudboard.json here.
 * `pull_cmd` is the curl command to yank text from remote storage.
 * `pull_json` is the expression to extract text from response of remote service, if that is a JSON response.
 
+Another example is to use aws dynamodb as service,
+
+    {
+        "self_service": {
+            "z": {
+                "pull_cmd": "aws dynamodb get-item --table-name MyRegisters --key '{\\\"reg_id\\\": {\\\"S\\\": \\\"1234\\\"}}'",
+                "pull_json": "result['Item']['content']['S']",
+                "push_cmd": "aws dynamodb update-item --table-name MyRegisters --key '{\\\"reg_id\\\": {\\\"S\\\": \\\"1234\\\"}}' --update-expression \\\"SET content=:clip\\\" --expression-attribute-values '{\\\":clip\\\": {\\\"S\\\": \\\"%s\\\"}}'"
+            }
+        }
+    }
+
 # Installation
 
 Your VIM must have python support, check it with `:python print 'hello'`.

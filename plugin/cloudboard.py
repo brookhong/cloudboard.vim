@@ -41,9 +41,9 @@ def UrlEncode():
         astr = vim.eval('l:astr')
         dir = int(vim.eval('l:adir'))
         if dir:
-            urlStr = urlparse.quote_plus(astr)
+            urlStr = urlparse.quote(astr)
         else:
-            urlStr = urlparse.unquote_plus(astr)
+            urlStr = urlparse.unquote(astr)
             urlStr = urlStr.replace("'", "''")
         vim.command("let l:urlStr='%s'" % urlStr)
         return urlStr
@@ -129,7 +129,7 @@ class CloudBoard:
             if "files" in gist and name in gist['files']:
                 furl = gist['files'][name]['raw_url']
                 content = request(furl, {'Authorization': 'token %s' % self.config['token']}, json_decode=False)
-                content = urlparse.unquote_plus(content).replace("'", "''")
+                content = urlparse.unquote(content).replace("'", "''")
                 vim.command("let @c='%s'" % content)
                 vim.command('normal "cp')
             else:
@@ -145,7 +145,7 @@ class CloudBoard:
                 for name in gist['files']:
                     furl = gist['files'][name]['raw_url']
                     cmt = request(furl, {'Authorization': 'token %s' % self.config['token']}, json_decode=False)
-                    cmt = '%s %s %s\n%s\n' % ('>'*16, name, '<'*16, urlparse.unquote_plus(cmt).replace("'", "''"))
+                    cmt = '%s %s %s\n%s\n' % ('>'*16, name, '<'*16, urlparse.unquote(cmt).replace("'", "''"))
                     content = content + cmt
                 vim.command("let @c='%s'" % content)
                 vim.command('normal "cp')
@@ -181,7 +181,7 @@ class CloudBoard:
         allcomts = ""
         hid = 0
         for c in comments:
-            cmt = '%s %d %s\n%s\n' % ('>'*16, hid, '<'*16, urlparse.unquote_plus(c[0]).replace("'", "''"))
+            cmt = '%s %d %s\n%s\n' % ('>'*16, hid, '<'*16, urlparse.unquote(c[0]).replace("'", "''"))
             allcomts = allcomts + cmt
             hid = hid + 1
         vim.command("let @c='%s'" % allcomts)
@@ -203,7 +203,7 @@ class CloudBoard:
             conf = self.config['self_service'][nr]
 
             if 'pull_cmd' in conf:
-                result = json.loads(vim.eval("system(\"%s\")" % conf['pull_cmd']))
+                result = json.loads(vim.eval("system(\"LC_CTYPE=UTF-8 %s\")" % conf['pull_cmd']))
                 if 'pull_json' in conf:
                     result = eval(conf['pull_json'])
                 cmt = result
@@ -216,7 +216,7 @@ class CloudBoard:
                     cmt = cmt.encode('utf8')
 
             if len(cmt) > 1:
-                comment = urlparse.unquote_plus(cmt).replace("'", "''")
+                comment = urlparse.unquote(cmt).replace("'", "''")
                 vim.command("let @c='%s'" % comment)
                 vim.command('normal "cp')
         else:
@@ -265,7 +265,7 @@ class CloudBoard:
                     if sys.version_info[0] == 2:
                         comment = comment.encode('utf8')
                     if len(comment) > 1:
-                        comment = urlparse.unquote_plus(comment).replace("'", "''")
+                        comment = urlparse.unquote(comment).replace("'", "''")
                         vim.command("let @c='%s'" % comment)
                         vim.command('normal "cp')
                         if 'autoclear' in self.config and nr in self.config['autoclear']:
