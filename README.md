@@ -72,7 +72,7 @@ Some example of ~/.cloudboard.json here.
     {
         "self_service": {
             "z": {
-                "push_cmd": "curl -s -u : --anyauth --location-trusted -b ~/.cloudboard.azn.cookie -c ~/.cloudboard.azn.cookie -H 'Content-Type: application/json' -d '{ \\\"pathEdits\\\": [ { \\\"editAction\\\": \\\"PUT\\\", \\\"path\\\": \\\"/description\\\", \\\"data\\\": \\\"%s\\\" } ] }' https://api.xxx.com/notes/133/edits",
+                "push_cmd": "curl -s -u : --anyauth --location-trusted -b ~/.cloudboard.azn.cookie -c ~/.cloudboard.azn.cookie -H 'Content-Type: application/json' -d '{ \"pathEdits\": [ { \"editAction\": \"PUT\", \"path\": \"/description\", \"data\": \"%s\" } ] }' https://api.xxx.com/notes/133/edits",
                 "pull_cmd": "curl -s -u : --anyauth --location-trusted -b ~/.cloudboard.azn.cookie -c ~/.cloudboard.azn.cookie https://api.xxx.com/notes/133",
                 "pull_json": "result['description']"
             },
@@ -88,9 +88,9 @@ Another example is to use aws dynamodb as service,
     {
         "self_service": {
             "z": {
-                "pull_cmd": "aws dynamodb get-item --table-name MyRegisters --key '{\\\"reg_id\\\": {\\\"S\\\": \\\"1234\\\"}}'",
+                "pull_cmd": "aws dynamodb get-item --table-name MyRegisters --key '{\"reg_id\": {\"S\": \"1234\"}}'",
                 "pull_json": "result['Item']['content']['S']",
-                "push_cmd": "aws dynamodb update-item --table-name MyRegisters --key '{\\\"reg_id\\\": {\\\"S\\\": \\\"1234\\\"}}' --update-expression \\\"SET content=:clip\\\" --expression-attribute-values '{\\\":clip\\\": {\\\"S\\\": \\\"%s\\\"}}'"
+                "push_cmd": "aws dynamodb update-item --table-name MyRegisters --key '{\"reg_id\": {\"S\": \"1234\"}}' --update-expression \"SET content=:clip\" --expression-attribute-values '{\":clip\": {\"S\": \"%s\"}}'"
             }
         }
     }

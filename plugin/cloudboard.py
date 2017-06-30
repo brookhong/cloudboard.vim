@@ -203,7 +203,9 @@ class CloudBoard:
             conf = self.config['self_service'][nr]
 
             if 'pull_cmd' in conf:
-                result = json.loads(vim.eval("system(\"LC_CTYPE=UTF-8 %s\")" % conf['pull_cmd']))
+                pull_cmd = conf['pull_cmd'].replace('"', '\\"')
+                result = vim.eval("system(\"PYTHONPATH= LC_CTYPE=UTF-8 %s\")" % pull_cmd)
+                result = json.loads(result)
                 if 'pull_json' in conf:
                     result = eval(conf['pull_json'])
                 cmt = result
@@ -228,7 +230,8 @@ class CloudBoard:
 
             if 'push_cmd' in conf:
                 push_cmd = conf['push_cmd'] % clip
-                vim.eval("system(\"%s\")" % push_cmd)
+                push_cmd = push_cmd.replace('"', '\\"')
+                vim.eval("system(\"PYTHONPATH= LC_CTYPE=UTF-8 %s\")" % push_cmd)
             else:
                 headers = {}
                 if 'auth_code' in conf:
