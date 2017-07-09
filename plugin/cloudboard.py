@@ -214,10 +214,10 @@ class CloudBoard:
                 if 'auth_code' in conf:
                     headers['Authorization'] = "Basic " + conf['auth_code']
                 cmt = request(conf['url'], headers, json_decode=False)
-                if sys.version_info[0] == 2:
-                    cmt = cmt.encode('utf8')
 
             if len(cmt) > 1:
+                if sys.version_info[0] == 2:
+                    cmt = cmt.encode('utf8')
                 comment = urlparse.unquote(cmt).replace("'", "''")
                 vim.command("let @c='%s'" % comment)
                 vim.command('normal "cp')
